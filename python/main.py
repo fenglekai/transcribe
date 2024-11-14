@@ -1,5 +1,4 @@
 import time
-import numpy as np
 import uvicorn
 import io
 import librosa

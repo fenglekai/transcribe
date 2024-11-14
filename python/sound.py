@@ -1,13 +1,11 @@
 import sys
 import threading
-import time
 import sounddevice as sd
 import numpy as np
 import queue
 from typing import Callable
 from funasr_paraformer import paraformer
 from nlp_translation import csanmt_translation
-import pyaudio
 
 
 class SoundTranscribe:

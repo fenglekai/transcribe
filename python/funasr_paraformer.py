@@ -1,8 +1,6 @@
 from funasr import AutoModel
 import os
 import soundfile as sf
-from modelscope.pipelines import pipeline
-from modelscope.utils.constant import Tasks
 
 
 source_model = "/home/bobby/.cache/modelscope/hub/iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online"
