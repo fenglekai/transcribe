@@ -46,8 +46,17 @@ python main.py
 ```
 cd ./python
 pip install -r requirements.txt
-python flet_main.py
+flet run flet_main.py
 ```
 
 ## 预览
 在浏览器中访问 http://localhost:5173/
+
+## 常见问题
+1. 找不到动态链接库，我使用的是miniforge3，所以需要手动指定lib
+
+     ```
+     export LD_LIBRARY_PATH="/home/user/miniforge3/lib:$LD_LIBRARY_PATH"
+     ```
+
+     

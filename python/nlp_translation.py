@@ -6,7 +6,7 @@ from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 
 model_path = '/home/bobby/.cache/modelscope/hub/iic/nlp_csanmt_translation_zh2en'
-pipeline_ins = pipeline(task=Tasks.translation, model=model_path)
+pipeline_ins = pipeline(task=Tasks.translation, model=model_path, disable_update=True)
 def csanmt_translation(input_sequence):
   outputs = pipeline_ins(input=input_sequence)
   return outputs['translation']
