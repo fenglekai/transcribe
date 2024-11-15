@@ -103,6 +103,9 @@ class SoundTranscribe:
 
     def close_sound(self):
         self.running = False
+        qsize = self.audio_queue.qsize()
+        while not self.audio_queue.empty():
+            self.audio_queue.get_nowait()
         sd.stop()
         self.stop_event.set()
 

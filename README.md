@@ -47,6 +47,9 @@ python main.py
 cd ./python
 pip install -r requirements.txt
 flet run flet_main.py
+# 构建linux应用
+pip install pyinstaller
+flet pack flet_main.py -D --add-data "/home/bobby/miniforge3/lib/python3.10/site-packages/funasr:funasr" --add-data "/home/bobby/miniforge3/lib/python3.10/site-packages/modelscope:modelscope" --add-data "/home/bobby/miniforge3/lib/python3.10/site-packages/tensorflow:tensorflow"
 ```
 
 ## 预览
