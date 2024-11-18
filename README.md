@@ -1,9 +1,11 @@
 
-# Transcribe
+<div>
+     <h1 align=center>Transcribe</h1>
+     <p>fork: <a href="https://github.com/Mumujianguang/whisper-demo-for-web">whisper-demo-for-web</a></p>
+     <p>基于 WebRCT + whisper 的语音识别 demo</p>
+     <p>基于flet + modelscope 的实时语言识别与翻译</p>
+<div>
 
-fork: https://github.com/Mumujianguang/whisper-demo-for-web
-基于 WebRCT + whisper 的语音识别 demo
-基于flet + modelscope 的实时语言识别与翻译
 
 ## 技术栈
 web
@@ -49,7 +51,7 @@ pip install -r requirements.txt
 flet run flet_main.py
 # 构建linux应用
 pip install pyinstaller
-flet pack flet_main.py -D --add-data "/home/bobby/miniforge3/lib/python3.10/site-packages/funasr:funasr" --add-data "/home/bobby/miniforge3/lib/python3.10/site-packages/modelscope:modelscope" --add-data "/home/bobby/miniforge3/lib/python3.10/site-packages/tensorflow:tensorflow"
+flet pack flet_main.py
 ```
 
 ## 预览

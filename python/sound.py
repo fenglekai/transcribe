@@ -1,15 +1,21 @@
+import io
 import sys
 import threading
+import time
 import sounddevice as sd
 import numpy as np
 import queue
 from typing import Callable
-from funasr_paraformer import paraformer
-from nlp_translation import csanmt_translation
+import requests
 
 
 class SoundTranscribe:
-    def __init__(self, sendText: Callable[[str], None], addRow: Callable[[], None], sendTranslation: Callable[[str], None]):
+    def __init__(
+        self,
+        sendText: Callable[[str], None],
+        addRow: Callable[[], None],
+        sendTranslation: Callable[[str], None],
+    ):
         self.sendText = sendText  # 发送文本
         self.addRow = addRow  # 新增行
         self.sendTranslation = sendTranslation  # 新增行
@@ -48,32 +54,44 @@ class SoundTranscribe:
     def transcribe_audio(
         self,
     ):
-        while self.running:
-            audio_data = []
-            for _ in range(int(self.RATE * self.BLOCK_DURATION / self.BLOCK_SIZE)):
-                audio_data.append(self.audio_queue.get())
-            audio_data = (
-                np.concatenate(audio_data, axis=0).flatten().astype(self.D_TYPE)
-            )
+            while self.running:
+                audio_data = []
+                for _ in range(int(self.RATE * self.BLOCK_DURATION / self.BLOCK_SIZE)):
+                    audio_data.append(self.audio_queue.get())
+                audio_data = (
+                    np.concatenate(audio_data, axis=0).flatten().astype(self.D_TYPE)
+                )
 
-            # 检测音量，如果低于阈值则跳过转录
-            rms_value = self.compute_rms(audio_data)
-            if rms_value < self.VOLUME_THRESHOLD:
-                print("Sound is too low, skipping transcription.")
-                if self.no_sound < 1:
-                    self.addRow()
-                    self.no_sound += 1
-                continue  # 声音小，跳过此段音频的转录
+                # 检测音量，如果低于阈值则跳过转录
+                rms_value = self.compute_rms(audio_data)
+                if rms_value < self.VOLUME_THRESHOLD:
+                    print("Sound is too low, skipping transcription.")
+                    if self.no_sound < 1:
+                        self.addRow()
+                        self.no_sound += 1
+                    continue  # 声音小，跳过此段音频的转录
 
-            print("Transcription start")
-            text = paraformer(audio_data)
-            print("Transcription:", text)
-            if text != "" and text != "嗯":
-                self.sendText(text)
-                translation = csanmt_translation(text)
-                print("Translation:", translation)
-                self.sendTranslation(translation)
-                self.no_sound = 0
+                try:
+                    data_bytes = audio_data.tobytes()
+                    files = {
+                        "audio": ("audio.wav", data_bytes, "application/octet-stream"),
+                        "timestamp": (None, str(time.time())),
+                    }
+                    url = "http://localhost:9090/soundDevice"
+                    headers = {"Content-Type": "application/octet-stream"}
+                    response = requests.post(
+                        url,
+                        files=files
+                    )
+                    json_data = response.json()
+                    text = json_data['text']
+                    translation = json_data['translation']
+                    if text != "" and text != "嗯":
+                        self.sendText(text)
+                        self.sendTranslation(translation)
+                        self.no_sound = 0
+                except Exception as e:
+                    print(e)
 
     def sound_transcribe(self):
         self.running = True

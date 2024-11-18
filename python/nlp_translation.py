@@ -5,14 +5,25 @@
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 
-model_path = '/home/bobby/.cache/modelscope/hub/iic/nlp_csanmt_translation_zh2en'
-pipeline_ins = pipeline(task=Tasks.translation, model=model_path, disable_update=True)
-def csanmt_translation(input_sequence):
-  outputs = pipeline_ins(input=input_sequence)
-  return outputs['translation']
+
+class NlpTranslation:
+    def __init__(self):
+        model_path = (
+            "/home/bobby/.cache/modelscope/hub/iic/nlp_csanmt_translation_zh2en"
+        )
+        self.pipeline_ins = pipeline(
+            task=Tasks.translation, model=model_path, disable_update=True
+        )
+
+    def csanmt_translation(self, input_sequence):
+        outputs = self.pipeline_ins(input=input_sequence)
+        return outputs["translation"]
 
 
 if __name__ == "__main__":
-  input_sequence = '声明补充说，沃伦的同事都深感震惊，并且希望他能够投案自首。'
-  res = csanmt_translation(input_sequence)
-  print(res['translation']) # 'The statement added that Warren's colleagues were deeply shocked and expected him to turn himself in.'
+    nlp = NlpTranslation()
+    input_sequence = "声明补充说，沃伦的同事都深感震惊，并且希望他能够投案自首。"
+    res = nlp.csanmt_translation(input_sequence)
+    print(
+        res["translation"]
+    )  # 'The statement added that Warren's colleagues were deeply shocked and expected him to turn himself in.'

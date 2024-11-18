@@ -2,3 +2,4 @@ web/node_modules
 __pycache__
 python/build
 python/dist
+python/flet_main.spec

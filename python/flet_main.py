@@ -6,7 +6,7 @@ import threading
 from sound import SoundTranscribe
 
 
-class Flet_main:
+class FletMain:
     def __init__(self):
         self.page = None
         self.devices = [
@@ -224,4 +224,4 @@ class Flet_main:
 
 
 if __name__ == "__main__":
-    Flet_main()
+    FletMain()
