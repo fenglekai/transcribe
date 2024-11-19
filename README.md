@@ -52,6 +52,7 @@ flet run flet_main.py
 # 构建linux应用
 pip install pyinstaller
 flet pack flet_main.py
+docker build -t transcribe:latest .
 ```
 
 ## 预览

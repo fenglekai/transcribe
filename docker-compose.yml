@@ -1,0 +1,9 @@
+services:
+  transcribe:
+    image: transcribe
+    container_name: transcribe
+    volumes:
+      - /home/bobby/.cache/modelscope:/work_home/models/modelscope
+      - /home/bobby/.cache/whisper:/work_home/models/whisper
+    ports:
+      - "9090:9090"
