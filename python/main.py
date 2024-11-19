@@ -1,4 +1,3 @@
-import sys
 import time
 import numpy as np
 import uvicorn
@@ -10,10 +9,11 @@ from fastapi import FastAPI, File, Form, UploadFile
 from whisper_model import WhisperModel
 from funasr_paraformer import FunasrParaformer
 from nlp_translation import NlpTranslation
+from model_path import whisper_path
 
 app = FastAPI()
 
-whisper = WhisperModel(model_name="medium")
+whisper = WhisperModel(model_name=whisper_path)
 
 funasr = FunasrParaformer()
 nlp = NlpTranslation()

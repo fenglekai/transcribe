@@ -4,15 +4,13 @@
 
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
+from model_path import nlp_path
 
 
 class NlpTranslation:
     def __init__(self):
-        model_path = (
-            "/home/bobby/.cache/modelscope/hub/iic/nlp_csanmt_translation_zh2en"
-        )
         self.pipeline_ins = pipeline(
-            task=Tasks.translation, model=model_path, disable_update=True
+            task=Tasks.translation, model=nlp_path, disable_update=True
         )
 
     def csanmt_translation(self, input_sequence):

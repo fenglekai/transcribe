@@ -1,13 +1,13 @@
 import os
 import soundfile as sf
+from model_path import funasr_path
 
 
 class FunasrParaformer:
     def __init__(self):
         from funasr import AutoModel
-        source_model = "/home/bobby/.cache/modelscope/hub/iic/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online"
 
-        self.model = AutoModel(model=source_model, disable_update=True)
+        self.model = AutoModel(model=funasr_path, disable_update=True)
         self.chunk_size = [0, 10, 5]  # [0, 10, 5] 600ms, [0, 8, 4] 480ms
         self.encoder_chunk_look_back = (
             4  # number of chunks to lookback for encoder self-attention

@@ -1,4 +1,3 @@
-import io
 import sys
 import threading
 import time
