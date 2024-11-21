@@ -57,11 +57,15 @@ def audio_to_text(timestamp: str = Form(), audio: UploadFile = File()):
 @app.post("/soundDevice")
 def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
     bt = audio.file.read()
-    restored_array = np.frombuffer(bt, dtype=np.float32)
+    resample_data = np.frombuffer(bt, dtype=np.float32)
+
+    # memory_file = io.BytesIO(bt)
+    # data, sample_rate = librosa.load(memory_file)
+    # resample_data = librosa.resample(data, orig_sr=sample_rate, target_sr=16000)
 
     transcribe_start_time = time.time()
     # 语音识别
-    text = funasr.paraformer(restored_array)
+    text = funasr.paraformer(resample_data)
     translation = nlp.csanmt_translation(text)
     transcribe_end_time = time.time()
 

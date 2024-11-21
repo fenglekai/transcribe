@@ -63,12 +63,12 @@ class SoundTranscribe:
 
                 # 检测音量，如果低于阈值则跳过转录
                 rms_value = self.compute_rms(audio_data)
-                if rms_value < self.VOLUME_THRESHOLD:
-                    print("Sound is too low, skipping transcription.")
-                    if self.no_sound < 1:
-                        self.addRow()
-                        self.no_sound += 1
-                    continue  # 声音小，跳过此段音频的转录
+                # if rms_value < self.VOLUME_THRESHOLD:
+                #     print("Sound is too low, skipping transcription.")
+                #     if self.no_sound < 1:
+                #         self.addRow()
+                #         self.no_sound += 1
+                #     continue  # 声音小，跳过此段音频的转录
 
                 try:
                     data_bytes = audio_data.tobytes()
@@ -77,7 +77,6 @@ class SoundTranscribe:
                         "timestamp": (None, str(time.time())),
                     }
                     url = "http://localhost:9090/soundDevice"
-                    headers = {"Content-Type": "application/octet-stream"}
                     response = requests.post(
                         url,
                         files=files
@@ -89,6 +88,10 @@ class SoundTranscribe:
                         self.sendText(text)
                         self.sendTranslation(translation)
                         self.no_sound = 0
+                    else:
+                        if self.no_sound < 1:
+                            self.addRow()
+                            self.no_sound += 1
                 except Exception as e:
                     print(e)
 

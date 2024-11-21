@@ -35,44 +35,44 @@ class FletMain:
                     height=60,
                     border_radius=10,
                 ),
-                # ft.Container(
-                #     content=self.device_list,
-                #     margin=10,
-                #     padding=10,
-                #     alignment=ft.alignment.center,
-                #     height=100,
-                #     border_radius=10,
-                # ),
-                # ft.Container(
-                #     content=ft.CupertinoButton(
-                #         content=ft.Text(
-                #             "刷新设备",
-                #         ),
-                #         opacity_on_click=0.3,
-                #         on_click=lambda e: self.refresh_device(e),
-                #     ),
-                #     margin=10,
-                #     padding=10,
-                #     alignment=ft.alignment.center,
-                #     height=100,
-                #     border_radius=10,
-                # ),
-                # ft.Container(
-                #     content=self.device_detail,
-                #     margin=10,
-                #     padding=10,
-                #     alignment=ft.alignment.center,
-                #     height=100,
-                #     border_radius=10,
-                # ),
-                # ft.Container(
-                #     content=self.volume_bar,
-                #     margin=10,
-                #     padding=10,
-                #     alignment=ft.alignment.center,
-                #     height=100,
-                #     border_radius=10,
-                # ),
+                ft.Container(
+                    content=self.device_list,
+                    margin=10,
+                    padding=10,
+                    alignment=ft.alignment.center,
+                    height=100,
+                    border_radius=10,
+                ),
+                ft.Container(
+                    content=ft.CupertinoButton(
+                        content=ft.Text(
+                            "刷新设备",
+                        ),
+                        opacity_on_click=0.3,
+                        on_click=lambda e: self.refresh_device(e),
+                    ),
+                    margin=10,
+                    padding=10,
+                    alignment=ft.alignment.center,
+                    height=100,
+                    border_radius=10,
+                ),
+                ft.Container(
+                    content=self.device_detail,
+                    margin=10,
+                    padding=10,
+                    alignment=ft.alignment.center,
+                    height=100,
+                    border_radius=10,
+                ),
+                ft.Container(
+                    content=self.volume_bar,
+                    margin=10,
+                    padding=10,
+                    alignment=ft.alignment.center,
+                    height=100,
+                    border_radius=10,
+                ),
             ]
         )
         self.stop_event = threading.Event()
@@ -124,6 +124,17 @@ class FletMain:
         page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         page.auto_scroll = True
         page.scroll = ft.ScrollMode.HIDDEN
+
+        # 窗口关闭事件
+        def handle_window_event(e):
+            if e.data == "close":
+                # 用户尝试关闭窗口，弹出确认对话框
+                print('close')
+                self.sound_transcribe.close_sound()
+                page.window.destroy()
+
+        page.window.prevent_close = True
+        page.window.on_event = handle_window_event
 
         page.floating_action_button = ft.FloatingActionButton(
             icon=ft.icons.PLAY_ARROW,
