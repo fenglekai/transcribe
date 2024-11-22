@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button, Upload } from "antd";
 import type { GetProp, UploadFile, UploadProps } from "antd";
 import AudioAI from "../sdk/AudioAI";
 
 type Result = {
   text: string;
+  result: null;
   transcribe_time?: number;
 };
 
@@ -31,7 +32,7 @@ export default function UploadButton(props: Props) {
       props.onResult?.(response);
       setFileList([]);
     } catch (error) {
-      props.onResult?.({ text: `${error}` });
+      props.onResult?.({ text: `${error}`, result: null });
     } finally {
       setUploading(false);
     }

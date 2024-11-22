@@ -12,3 +12,12 @@ export const fetchAudioToText = async (audio: Blob) => {
 
     return api.post('/audioToText', formData)
 }
+
+export const fetchSpeedToText = async (audio: Blob) => {
+    const formData = new FormData()
+
+    formData.append('audio', audio)
+    formData.append('timestamp', String(+new Date()))
+
+    return api.post('/web/soundDevice', formData)
+}

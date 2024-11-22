@@ -2,8 +2,8 @@ import { useState } from "react";
 import "./App.css";
 import RecordButton, { Result } from "./components/RecordButton";
 import UploadButton from "./components/UploadButton";
+import WatchAudio from "./components/WatchAudio";
 import { Divider, List, Typography, Collapse } from "antd";
-import type { CollapseProps } from "antd";
 
 function App() {
   const [list, setList] = useState<Result[]>([]);
@@ -11,8 +11,6 @@ function App() {
   const onResult = (result: Result) => {
     setList((prev) => [...prev, result]);
   };
-
-  const items: CollapseProps["items"] = [{}];
 
   return (
     <div className="App">
@@ -66,6 +64,8 @@ function App() {
           </List.Item>
         )}
       />
+      <Divider orientation="left">实时监听</Divider>
+      <WatchAudio />
     </div>
   );
 }
