@@ -76,7 +76,7 @@ class SoundTranscribe:
                         "audio": ("audio.wav", data_bytes, "application/octet-stream"),
                         "timestamp": (None, str(time.time())),
                     }
-                    url = "http://localhost:9090/soundDevice"
+                    url = "http://localhost:9090/python/soundDevice"
                     response = requests.post(
                         url,
                         files=files

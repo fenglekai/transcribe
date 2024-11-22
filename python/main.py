@@ -54,19 +54,48 @@ def audio_to_text(timestamp: str = Form(), audio: UploadFile = File()):
     }
 
 
-@app.post("/soundDevice")
+@app.post("/web/soundDevice")
 def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
     bt = audio.file.read()
-    resample_data = np.frombuffer(bt, dtype=np.float32)
-
-    # memory_file = io.BytesIO(bt)
-    # data, sample_rate = librosa.load(memory_file)
-    # resample_data = librosa.resample(data, orig_sr=sample_rate, target_sr=16000)
+    memory_file = io.BytesIO(bt)
+    data, sample_rate = librosa.load(memory_file)
+    resample_data = librosa.resample(data, orig_sr=sample_rate, target_sr=16000)
 
     transcribe_start_time = time.time()
     # 语音识别
     text = funasr.paraformer(resample_data)
-    translation = nlp.csanmt_translation(text)
+    translation = ''
+    if text != '':
+        translation = nlp.csanmt_translation(text)
+    transcribe_end_time = time.time()
+
+    convert_start_time = time.time()
+    # 繁体转简体
+    text = zhconv.convert(text, "zh-hans")
+    convert_end_time = time.time()
+
+    print(text)
+
+    return {
+        "status": "ok",
+        "text": text,
+        "translation": translation,
+        "transcribe_time": transcribe_end_time - transcribe_start_time,
+        "convert_time": convert_end_time - convert_start_time,
+    }
+
+
+@app.post("/python/soundDevice")
+def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
+    bt = audio.file.read()
+    resample_data = np.frombuffer(bt, dtype=np.float32)
+
+    transcribe_start_time = time.time()
+    # 语音识别
+    text = funasr.paraformer(resample_data)
+    translation = ''
+    if text != '':
+        translation = nlp.csanmt_translation(text)
     transcribe_end_time = time.time()
 
     convert_start_time = time.time()
