@@ -7,6 +7,14 @@
 <div>
 
 
+## TODO
+
+- 实时识别时，保存历史音频使用Whisper优化识别内容
+- Flet客户端可以选择音频设备再监听（Electron/Node是否有选择音频设备的库）
+- 语言角色识别
+
+
+
 ## 技术栈
 web
 - 构建工具：```vite```
@@ -23,12 +31,6 @@ python
 
 
 ## 运行
-
-### 安装 whisper 依赖
-```
-pip install -U openai-whisper
-```
-更多细节请查阅 [whisper官网](https://github.com/openai/whisper)
 
 ### 前端环境
 ```
@@ -49,10 +51,6 @@ python main.py
 cd ./python
 pip install -r requirements.txt
 flet run flet_main.py
-# 构建linux应用
-pip install pyinstaller
-flet pack flet_main.py
-docker build -t transcribe:latest .
 ```
 
 ## 预览
