@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Spin } from "antd";
-import AudioRTC from "../sdk/AudioRTC";
-import AudioAI from "../sdk/AudioAI";
+import AudioRTC from "../hook/AudioRTC";
+import AudioAI from "../hook/AudioAI";
 
 type Segments = {
   id: number;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Upload } from "antd";
 import type { GetProp, UploadFile, UploadProps } from "antd";
-import AudioAI from "../sdk/AudioAI";
+import AudioAI from "../hook/AudioAI";
 
 type Result = {
   text: string;

@@ -30,7 +30,8 @@ const hasSound = async (
       }
       callback(hasSoundFlag);
     } catch (error) {
-      console.error("音频解码失败:", error);
+      console.warn(`音频解码失败: ${error}`);
+      callback(false);
     }
   };
   reader.onerror = (error) => {
@@ -88,13 +89,17 @@ export default class AudioRTC {
   }
 }
 
-export class WatchChromeTag {
+export type mediaDevicesType = "display" | "microphone";
+
+export class WatchMediaDevices {
+  type!: mediaDevicesType;
   mediaStream!: MediaStream;
   mediaRecorder!: MediaRecorder;
   streamInterval!: string | number | NodeJS.Timeout;
   recordedChunks: Blob[];
 
-  constructor() {
+  constructor(type: mediaDevicesType = "display") {
+    this.type = type;
     this.recordedChunks = [];
   }
 
@@ -118,29 +123,39 @@ export class WatchChromeTag {
   }
 
   /**
-   * 触发显示媒体选择
-   * @param callback 调用返回，sound是否有声音，wavBlob音频流
+   * 根据type选择监听对象
+   * @returns MediaStream 媒体流
    */
-  async selectDisplayMedia(callback: (sound: boolean, wavBlob: Blob) => void) {
-    this.mediaStream = await navigator.mediaDevices.getDisplayMedia({
-      audio: { echoCancellation: true },
-      video: {
-        width: 320,
-        height: 240,
-        frameRate: 30,
-      },
-    });
+  async getTypeMediaDevices() {
+    let stream;
+    if (this.type === "display") {
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        audio: { echoCancellation: true },
+      });
+    } else {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true },
+      });
+    }
+    return stream;
+  }
+
+  /**
+   * 触发显示媒体选择
+   * @param callback 调用返回，sound是否有声音
+   */
+  async selectDisplayMedia(callback: (sound: boolean) => void) {
+    this.mediaStream = await this.getTypeMediaDevices();
     this.mediaRecorder = new MediaRecorder(this.mediaStream, {
       mimeType: "video/webm; codecs=pcm",
     });
     // 数据可用（录屏结束）时的回调
     this.mediaRecorder.ondataavailable = async (event) => {
       // 转换webm -> wav
-      const wavBlob = await getWaveBlob(event.data, false);
-      await hasSound(wavBlob, (sound) => {
-        callback(sound, wavBlob);
-        if (sound && wavBlob.size > 0) {
-          console.log("has sound");
+      await hasSound(event.data, async (sound) => {
+        callback(sound);
+        if (sound && event.data.size > 0) {
+          const wavBlob = await getWaveBlob(event.data, false);
           this.recordedChunks.push(wavBlob);
         }
       });
@@ -157,7 +172,7 @@ export class WatchChromeTag {
         this.stopWatch();
       }
     };
-    this.streamInterval = setInterval(sendToServer, 3000);
+    this.streamInterval = setInterval(sendToServer, 1200);
   }
 
   /**
