@@ -4,6 +4,7 @@
     "csanmt",
     "flet",
     "Funasr",
+    "Kaldi",
     "miniforge",
     "modelscope",
     "naudiodon",
@@ -11,6 +12,7 @@
     "recordrtc",
     "soundfile",
     "tobytes",
+    "vosk",
     "webm"
   ]
 }

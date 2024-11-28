@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./App.css";
 import RecordButton, { Result } from "./components/RecordButton";
 import UploadButton from "./components/UploadButton";
-import WatchAudio from "./components/WatchAudio";
+import WatchButton from "./components/WatchButton";
 import { Divider, List, Typography, Collapse } from "antd";
 
 function App() {
@@ -65,7 +65,7 @@ function App() {
         )}
       />
       <Divider orientation="left">实时监听</Divider>
-      <WatchAudio />
+      <WatchButton />
     </div>
   );
 }

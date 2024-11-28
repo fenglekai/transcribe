@@ -1,106 +1,100 @@
 import { useState, useCallback, useEffect } from "react";
-import { Button, Col, Row, Input } from "antd";
-import { fetchSpeedToText } from "../sdk/service";
-import { WatchChromeTag } from "../sdk/AudioRTC";
+import { Input, Select } from "antd";
+import { mediaDevicesType, WatchMediaDevices } from "../hook/AudioRTC";
+import { useWorker } from "../hook/useWorker";
 
 const { TextArea } = Input;
 
-const watchChromeTag = new WatchChromeTag();
+let watchFrame: number;
 
-let fetchFrame: number;
-let text = "";
-let translation = "";
-let addRowStatus = true;
-
-export default function WatchAudio() {
-  const [watch, setWatch] = useState(false);
+export default function WatchAudio(props: {
+  type: mediaDevicesType;
+  watch: boolean;
+  errorCallback?: (error: unknown) => void;
+}) {
+  const [watchMediaDevices] = useState(new WatchMediaDevices(props.type));
   const [textRender, setTextRender] = useState("");
   const [translationRender, setTranslationRender] = useState("");
+  const [translationType, setTranslationType] = useState("zh2en");
+  const webWorker = useWorker((event) => {
+    const message = event.data;
+    if (message.status) {
+      setTextRender(message.text);
+      setTranslationRender(message.translation);
+    }
+  });
 
-  const handleStart = async () => {
-    text = "";
-    translation = "";
-    addRowStatus = true;
-    setWatch(true);
+  const handleStop = useCallback(() => {
+    watchMediaDevices.stopWatch();
+    cancelAnimationFrame(watchFrame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleTranslationChange = (value: string) => {
+    setTranslationType(value);
+  };
+
+  const handleSelect = async () => {
     try {
-      await watchChromeTag.selectDisplayMedia((sound) => {
+      await watchMediaDevices.selectDisplayMedia((sound) => {
         if (!sound) {
-          if (!addRowStatus) {
-            text += "\n\n";
-            translation += "\n\n";
-            addRowStatus = true;
-          }
-          return console.log("not sound");
+          webWorker.postMessage({ addRow: true });
         }
       });
     } catch (error) {
-      handleStop()
+      console.warn(error);
     }
   };
 
-  const handleStop = () => {
-    cancelAnimationFrame(fetchFrame);
-    setWatch(false);
-    watchChromeTag.stopWatch()
-  };
-
-  // 获取转换文本
-  const fetchTranscribe = useCallback(async () => {
-    try {
-      if (watchChromeTag.getChunksLength() > 0) {
-        const wavBlob = watchChromeTag.getRecordedChunks();
-        const res = await fetchSpeedToText(wavBlob as Blob);
-        const { text: t, translation: tlt } = res.data;
-        if (watch) {
-          text += t;
-          translation += tlt;
-          addRowStatus = false;
-          setTextRender(text);
-          setTranslationRender(translation);
-        }
-      }
-      fetchFrame = requestAnimationFrame(fetchTranscribe);
-    } catch (error) {
-      console.error(error);
+  const watchLoop = () => {
+    if (watchMediaDevices.getChunksLength() > 0) {
+      
+      const wavBlob = watchMediaDevices.getRecordedChunks();
+      webWorker.postMessage({
+        wavBlob,
+        translationType,
+      });
     }
-  }, [watch]);
+    watchFrame = requestAnimationFrame(watchLoop);
+  };
+  watchFrame = requestAnimationFrame(watchLoop);
 
   useEffect(() => {
-    if (watch) {
-      fetchFrame = requestAnimationFrame(fetchTranscribe);
+    if (props.watch) {
+      setTextRender("");
+      setTranslationRender("");
+      webWorker.postMessage({ clean: true });
+      handleSelect();
+    } else {
+      handleStop();
     }
-  }, [watch, fetchTranscribe]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleStop, props.watch, webWorker]);
 
   return (
     <>
-      <Button color="primary" disabled={watch} onClick={handleStart}>
-        开始监听
-      </Button>
-      <Button
-        danger
-        disabled={!watch}
-        style={{ marginLeft: "12px" }}
-        onClick={handleStop}
-      >
-        终止
-      </Button>
-      <div style={{ marginTop: "12px" }}>
-        <Row gutter={16}>
-          <Col span={12}>
-            <TextArea
-              value={textRender}
-              placeholder="语言识别"
-              autoSize={{ minRows: 12, maxRows: 15 }}
-            />
-          </Col>
-          <Col span={12}>
-            <TextArea
-              value={translationRender}
-              placeholder="翻译"
-              autoSize={{ minRows: 12, maxRows: 15 }}
-            />
-          </Col>
-        </Row>
+      <TextArea
+        value={textRender}
+        placeholder={props.type === "display" ? "标签页音频" : "麦克风"}
+        autoSize={{ minRows: 12, maxRows: 15 }}
+      />
+      <div style={{ marginTop: "20px" }}>
+        <Select
+          disabled={props.watch}
+          defaultValue="zh2en"
+          style={{ width: 120 }}
+          onChange={handleTranslationChange}
+          options={[
+            { value: "zh2en", label: "中文 -> 英文" },
+            { value: "en2zh", label: "英文 -> 中文" },
+          ]}
+        />
+        <TextArea
+          style={{ marginTop: "12px" }}
+          value={translationRender}
+          placeholder="实时翻译"
+          autoSize={{ minRows: 12, maxRows: 15 }}
+        />
       </div>
     </>
   );
