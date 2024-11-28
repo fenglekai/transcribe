@@ -34,7 +34,6 @@ class FunasrParaformer:
                 decoder_chunk_look_back=self.decoder_chunk_look_back,
             )
             join_res += res[0]["text"]
-            print(res)
 
         return join_res
 

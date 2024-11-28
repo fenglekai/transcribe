@@ -6,17 +6,20 @@ import librosa
 import zhconv
 
 from fastapi import FastAPI, File, Form, UploadFile
+from pydantic import BaseModel
 from whisper_model import WhisperModel
 from funasr_paraformer import FunasrParaformer
 from nlp_translation import NlpTranslation
-from model_path import whisper_path
+from model_path import whisper_path, translation_zh2en_path, translation_en2zh_path
+
 
 app = FastAPI()
 
 whisper = WhisperModel(model_name=whisper_path)
 
 funasr = FunasrParaformer()
-nlp = NlpTranslation()
+zh2en = NlpTranslation(translation_zh2en_path)
+en2zh = NlpTranslation(translation_en2zh_path)
 
 
 @app.post("/audioToText")
@@ -64,24 +67,12 @@ def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
     transcribe_start_time = time.time()
     # 语音识别
     text = funasr.paraformer(resample_data)
-    translation = ''
-    if text != '':
-        translation = nlp.csanmt_translation(text)
     transcribe_end_time = time.time()
-
-    convert_start_time = time.time()
-    # 繁体转简体
-    text = zhconv.convert(text, "zh-hans")
-    convert_end_time = time.time()
-
-    print(text)
 
     return {
         "status": "ok",
         "text": text,
-        "translation": translation,
         "transcribe_time": transcribe_end_time - transcribe_start_time,
-        "convert_time": convert_end_time - convert_start_time,
     }
 
 
@@ -93,24 +84,47 @@ def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
     transcribe_start_time = time.time()
     # 语音识别
     text = funasr.paraformer(resample_data)
-    translation = ''
-    if text != '':
-        translation = nlp.csanmt_translation(text)
+    translation = ""
+    if text != "":
+        translation = zh2en.csanmt_translation(text)
     transcribe_end_time = time.time()
-
-    convert_start_time = time.time()
-    # 繁体转简体
-    text = zhconv.convert(text, "zh-hans")
-    convert_end_time = time.time()
-
-    print(text)
 
     return {
         "status": "ok",
         "text": text,
         "translation": translation,
         "transcribe_time": transcribe_end_time - transcribe_start_time,
-        "convert_time": convert_end_time - convert_start_time,
+    }
+
+
+class TranslationBody(BaseModel):
+    type: str = None
+    text: str = None
+
+@app.post("/translation")
+def sound_device(item: TranslationBody):
+    type = item.type
+    text = item.text
+    if type == None or text == None:
+        return {
+            "status": "error",
+            "message": "没有收到参数"
+        }
+    transcribe_start_time = time.time()
+    # 翻译
+    translation = text
+    if text != "":
+        if type == "zh2en":
+            translation = zh2en.translation(text)
+        if type == "en2zh":
+            translation = en2zh.translation(text)
+    transcribe_end_time = time.time()
+
+    return {
+        "status": "ok",
+        "text": text,
+        "translation": translation,
+        "transcribe_time": transcribe_end_time - transcribe_start_time,
     }
 
 

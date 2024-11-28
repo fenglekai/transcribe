@@ -1,27 +1,22 @@
-# Chinese-to-English
-
-# 温馨提示: 使用pipeline推理及在线体验功能的时候，尽量输入单句文本，如果是多句长文本建议人工分句，否则可能出现漏译或未译等情况！！！
-
-from modelscope.pipelines import pipeline
-from modelscope.utils.constant import Tasks
-from model_path import nlp_path
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 
 class NlpTranslation:
-    def __init__(self):
-        self.pipeline_ins = pipeline(
-            task=Tasks.translation, model=nlp_path, disable_update=True
-        )
+    def __init__(self, nlp_path=None):
+        self.tokenizer = AutoTokenizer.from_pretrained(nlp_path, local_files_only=True)
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(nlp_path, local_files_only=True)
 
-    def csanmt_translation(self, input_sequence):
-        outputs = self.pipeline_ins(input=input_sequence)
-        return outputs["translation"]
+    def translation(self, input_sequence=None):
+        if isinstance(input_sequence, str):
+            input_sequence = [input_sequence]
+        translated = self.model.generate(**self.tokenizer(input_sequence, return_tensors="pt", padding=True))
+        res = [self.tokenizer.decode(t, skip_special_tokens=True) for t in translated]
+        return res[0]
 
 
 if __name__ == "__main__":
     nlp = NlpTranslation()
-    input_sequence = "声明补充说，沃伦的同事都深感震惊，并且希望他能够投案自首。"
-    res = nlp.csanmt_translation(input_sequence)
-    print(
-        res["translation"]
-    )  # 'The statement added that Warren's colleagues were deeply shocked and expected him to turn himself in.'
+    # input_sequence = "声明补充说，沃伦的同事都深感震惊，并且希望他能够投案自首。"
+    input_sequence = "The statement added that all of Warren's colleagues were deeply shocked and hoped that he would be able to turn himself in."
+    res = nlp.translation(input_sequence)
+    print(res)
