@@ -10,7 +10,7 @@ let watchFrame: number;
 export default function WatchAudio(props: {
   type: mediaDevicesType;
   watch: boolean;
-  errorCallback?: (error: unknown) => void;
+  errorCallback?: () => void;
 }) {
   const [watchMediaDevices] = useState(new WatchMediaDevices(props.type));
   const [textRender, setTextRender] = useState("");
@@ -21,6 +21,12 @@ export default function WatchAudio(props: {
     if (message.status) {
       setTextRender(message.text);
       setTranslationRender(message.translation);
+    } else {
+      console.error(`WebWorker异常: ${message.error}`);
+      handleStop();
+      if (props.errorCallback) {
+        props.errorCallback();
+      }
     }
   });
 
@@ -43,12 +49,14 @@ export default function WatchAudio(props: {
       });
     } catch (error) {
       console.warn(error);
+      if (props.errorCallback) {
+        props.errorCallback();
+      }
     }
   };
 
   const watchLoop = () => {
     if (watchMediaDevices.getChunksLength() > 0) {
-      
       const wavBlob = watchMediaDevices.getRecordedChunks();
       webWorker.postMessage({
         wavBlob,

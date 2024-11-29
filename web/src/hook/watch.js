@@ -57,6 +57,9 @@ class OutputText {
     }
     throw Error("队列中没有音频");
   }
+  cleanBlobList() {
+    this.blobList.length = 0;
+  }
 }
 
 const outputText = new OutputText();
@@ -85,38 +88,44 @@ self.addEventListener("message", async (event) => {
 });
 
 const loop = async () => {
-  if (outputText.getBlobListLength() > 0) {
-    const wavBlob = outputText.getBlob();
-    const text = await transcribe(wavBlob);
-    await translation(text);
-    self.postMessage({
-      status: true,
-      text: outputText.text,
-      translation: outputText.translation,
-    });
+  try {
+    if (outputText.getBlobListLength() > 0) {
+      const wavBlob = outputText.getBlob();
+      const text = await transcribe(wavBlob);
+      await translation(text);
+      self.postMessage({
+        status: true,
+        text: outputText.text,
+        translation: outputText.translation,
+      });
+    }
+  } catch (error) {
+    errorCallback(error);
   }
   requestAnimationFrame(loop);
 };
 requestAnimationFrame(loop);
 
+const errorCallback = (error) => {
+  cancelAnimationFrame(frame);
+  outputText.cleanBlobList();
+  self.postMessage({
+    status: false,
+    error: String(error),
+  });
+};
+
 const transcribe = async (wavBlob) => {
-  try {
-    const res = await fetchSpeedToText(wavBlob);
-    const { text } = res.data;
-    outputText.addText(text);
-    const blobUrl = URL.createObjectURL(wavBlob);
-    URL.revokeObjectURL(blobUrl);
-    return text;
-  } catch (error) {
-    self.postMessage({
-      status: false,
-      error,
-    });
-  }
+  const res = await fetchSpeedToText(wavBlob);
+  const { text } = res.data;
+  outputText.addText(text);
+  const blobUrl = URL.createObjectURL(wavBlob);
+  URL.revokeObjectURL(blobUrl);
+  return text;
 };
 
 const translation = async (text) => {
-  if (!text) return console.error("没有获取文本");
+  if (!text) return console.error("没有获取到文本");
   const res = await fetchTranslation(outputText.translationType, text);
   const { translation } = res.data;
   outputText.addTranslation(translation);
