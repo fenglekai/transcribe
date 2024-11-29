@@ -1,3 +1,4 @@
+import asyncio
 import time
 import numpy as np
 import uvicorn
@@ -58,7 +59,7 @@ def audio_to_text(timestamp: str = Form(), audio: UploadFile = File()):
 
 
 @app.post("/web/soundDevice")
-def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
+async def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
     bt = audio.file.read()
     memory_file = io.BytesIO(bt)
     data, sample_rate = librosa.load(memory_file)
@@ -66,7 +67,7 @@ def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
 
     transcribe_start_time = time.time()
     # 语音识别
-    text = funasr.paraformer(resample_data)
+    text = await funasr.queue_paraformer(resample_data)
     transcribe_end_time = time.time()
 
     return {
@@ -77,16 +78,16 @@ def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
 
 
 @app.post("/python/soundDevice")
-def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
+async def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
     bt = audio.file.read()
     resample_data = np.frombuffer(bt, dtype=np.float32)
 
     transcribe_start_time = time.time()
     # 语音识别
-    text = funasr.paraformer(resample_data)
+    text = await funasr.queue_paraformer(resample_data)
     translation = ""
     if text != "":
-        translation = zh2en.translation(text)
+        translation = await zh2en.queue_translation(text)
     transcribe_end_time = time.time()
 
     return {
@@ -103,7 +104,7 @@ class TranslationBody(BaseModel):
 
 
 @app.post("/translation")
-def sound_device(item: TranslationBody):
+async def sound_device(item: TranslationBody):
     type = item.type
     text = item.text
     if type == None or text == None:
@@ -113,9 +114,9 @@ def sound_device(item: TranslationBody):
     translation = text
     if text != "":
         if type == "zh2en":
-            translation = zh2en.translation(text)
+            translation = await zh2en.queue_translation(text)
         if type == "en2zh":
-            translation = en2zh.translation(text)
+            translation = await en2zh.queue_translation(text)
     transcribe_end_time = time.time()
 
     return {
@@ -125,6 +126,13 @@ def sound_device(item: TranslationBody):
         "transcribe_time": transcribe_end_time - transcribe_start_time,
     }
 
+
+@app.on_event("startup")
+async def startup_event():
+    # 在应用启动时创建并启动异步任务
+    asyncio.create_task(funasr.task_loop(funasr.queue))
+    asyncio.create_task(zh2en.task_loop(zh2en.queue))
+    asyncio.create_task(en2zh.task_loop(en2zh.queue))
 
 
 uvicorn.run(app, host="0.0.0.0", port=9090)

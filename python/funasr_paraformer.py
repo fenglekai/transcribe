@@ -1,3 +1,4 @@
+import asyncio
 import os
 import soundfile as sf
 from model_path import funasr_path
@@ -6,7 +7,7 @@ from model_path import funasr_path
 class FunasrParaformer:
     def __init__(self):
         from funasr import AutoModel
-
+        self.queue = asyncio.Queue()
         self.model = AutoModel(model=funasr_path, disable_update=True)
         self.chunk_size = [0, 10, 5]  # [0, 10, 5] 600ms, [0, 8, 4] 480ms
         self.encoder_chunk_look_back = (
@@ -18,6 +19,20 @@ class FunasrParaformer:
 
         self.chunk_stride = self.chunk_size[1] * 960  # 600ms
         self.cache = {}
+        # asyncio.create_task(self.task_loop(self.queue))
+
+    async def task_loop(self, queue: asyncio.Queue):
+        while True:
+            (speech, response_q) = await queue.get()
+
+            res = self.paraformer(speech)
+            await response_q.put(res)
+
+    async def queue_paraformer(self, speech):
+        response_q = asyncio.Queue()
+        await self.queue.put((speech, response_q))
+        output = await response_q.get()
+        return output
 
     def paraformer(self, speech) -> str:
         total_chunk_num = int(len((speech) - 1) / self.chunk_stride + 1)
@@ -38,8 +53,13 @@ class FunasrParaformer:
         return join_res
 
 
-if __name__ == "__main__":
+async def main():
     funasr = FunasrParaformer()
     wav_file = os.path.join(funasr.model.model_path, "example/asr_example.wav")
     speech, sample_rate = sf.read(wav_file)
-    funasr.paraformer(speech)
+    res = await funasr.queue_paraformer(speech)
+    print(res)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
