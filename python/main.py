@@ -86,7 +86,7 @@ def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
     text = funasr.paraformer(resample_data)
     translation = ""
     if text != "":
-        translation = zh2en.csanmt_translation(text)
+        translation = zh2en.translation(text)
     transcribe_end_time = time.time()
 
     return {
@@ -101,15 +101,13 @@ class TranslationBody(BaseModel):
     type: str = None
     text: str = None
 
+
 @app.post("/translation")
 def sound_device(item: TranslationBody):
     type = item.type
     text = item.text
     if type == None or text == None:
-        return {
-            "status": "error",
-            "message": "没有收到参数"
-        }
+        return {"status": "error", "message": "没有收到参数"}
     transcribe_start_time = time.time()
     # 翻译
     translation = text
@@ -126,6 +124,7 @@ def sound_device(item: TranslationBody):
         "translation": translation,
         "transcribe_time": transcribe_end_time - transcribe_start_time,
     }
+
 
 
 uvicorn.run(app, host="0.0.0.0", port=9090)
