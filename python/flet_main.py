@@ -28,14 +28,6 @@ class FletMain:
         self.device_select = ft.Row(
             [
                 ft.Container(
-                    content=ft.Text("准备好了吗？开始录音吧!"),
-                    margin=10,
-                    padding=10,
-                    alignment=ft.alignment.center,
-                    height=60,
-                    border_radius=10,
-                ),
-                ft.Container(
                     content=self.device_list,
                     margin=10,
                     padding=10,
@@ -83,33 +75,38 @@ class FletMain:
             expand=1,
             spacing=10,
             auto_scroll=True,
+            height=300,
         )
         self.sound_text = ft.Text(selectable=True)
         self.list_view.controls.append(self.sound_text)
         self.sound_container = ft.Container(
+            expand=1,
             content=self.list_view,
             margin=10,
             padding=10,
             border=ft.border.all(1, ft.colors.GREY_300),
             border_radius=4,
             alignment=ft.alignment.top_left,
-            height=230,
         )
         self.translation_text = ft.Text(selectable=True)
         self.translation_list_view = ft.ListView(
             expand=1,
             spacing=10,
             auto_scroll=True,
-            height=230,
+            height=300,
         )
         self.translation_list_view.controls.append(self.translation_text)
-        self.translation_sound_container = ft.Container(
+        self.translation_container = ft.Container(
+            expand=1,
             content=self.translation_list_view,
             margin=10,
             padding=10,
             border=ft.border.all(1, ft.colors.GREY_300),
             border_radius=4,
             alignment=ft.alignment.top_left,
+        )
+        self.row = ft.Row(
+            controls=[self.sound_container, self.translation_container],
         )
         self.sound_transcribe = SoundTranscribe(
             self.add_text, self.add_row, self.add_translation
@@ -129,7 +126,7 @@ class FletMain:
         def handle_window_event(e):
             if e.data == "close":
                 # 用户尝试关闭窗口，弹出确认对话框
-                print('close')
+                print("close")
                 self.sound_transcribe.close_sound()
                 page.window.destroy()
 
@@ -142,8 +139,7 @@ class FletMain:
             bgcolor=ft.colors.CYAN_300,
         )
         page.add(self.device_select)
-        page.add(self.sound_container)
-        page.add(self.translation_sound_container)
+        page.add(self.row)
 
     def start_audio_stream(self):
         def audio_callback(indata, frames, time, status):
