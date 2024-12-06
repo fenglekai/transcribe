@@ -4,6 +4,7 @@
     "csanmt",
     "flet",
     "Funasr",
+    "huggingface",
     "Kaldi",
     "miniforge",
     "modelscope",
@@ -13,6 +14,7 @@
     "soundfile",
     "tobytes",
     "vosk",
-    "webm"
+    "webm",
+    "xenova"
   ]
 }
