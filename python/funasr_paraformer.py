@@ -1,5 +1,7 @@
 import asyncio
+import json
 import os
+from fastapi import WebSocket
 import soundfile as sf
 from model_path import funasr_path
 
@@ -7,8 +9,9 @@ from model_path import funasr_path
 class FunasrParaformer:
     def __init__(self):
         from funasr import AutoModel
-        self.queue = asyncio.Queue()
+
         self.model = AutoModel(model=funasr_path, disable_update=True)
+        self.queue = asyncio.Queue()
         self.chunk_size = [0, 10, 5]  # [0, 10, 5] 600ms, [0, 8, 4] 480ms
         self.encoder_chunk_look_back = (
             4  # number of chunks to lookback for encoder self-attention
@@ -19,7 +22,6 @@ class FunasrParaformer:
 
         self.chunk_stride = self.chunk_size[1] * 960  # 600ms
         self.cache = {}
-        # asyncio.create_task(self.task_loop(self.queue))
 
     async def task_loop(self, queue: asyncio.Queue):
         while True:
@@ -49,8 +51,22 @@ class FunasrParaformer:
                 decoder_chunk_look_back=self.decoder_chunk_look_back,
             )
             join_res += res[0]["text"]
-
         return join_res
+
+    async def ws_paraformer(self, speech, websocket: WebSocket) -> str:
+        total_chunk_num = int(len((speech) - 1) / self.chunk_stride + 1)
+        for i in range(total_chunk_num):
+            speech_chunk = speech[i * self.chunk_stride : (i + 1) * self.chunk_stride]
+            is_final = i == total_chunk_num - 1
+            res = self.model.generate(
+                input=speech_chunk,
+                cache=self.cache,
+                is_final=is_final,
+                chunk_size=self.chunk_size,
+                encoder_chunk_look_back=self.encoder_chunk_look_back,
+                decoder_chunk_look_back=self.decoder_chunk_look_back,
+            )
+            await websocket.send_text(json.dumps(res))
 
 
 async def main():

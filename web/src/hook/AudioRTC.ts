@@ -1,44 +1,5 @@
 import RecordRTC from "recordrtc";
-import { getWaveBlob } from "webm-to-wav-converter";
-
-// 分析声音波形
-const hasSound = async (
-  blob: Blob,
-  callback: (hasSoundFlag: boolean) => void
-) => {
-  let hasSoundFlag = false;
-  const audioContext = new AudioContext();
-  // 将 Blob 转换为 AudioBuffer
-  const reader = new FileReader();
-  reader.onload = async (event) => {
-    if (!event.target) return;
-    if (!(event.target.result instanceof ArrayBuffer)) return;
-    try {
-      const audioBuffer = await audioContext.decodeAudioData(
-        event.target.result
-      );
-      // 获取音频数据
-      const channelData = audioBuffer.getChannelData(0);
-
-      // 判断音频是否有波动
-      const threshold = 0.01;
-      for (let i = 0; i < channelData.length; i++) {
-        if (Math.abs(channelData[i]) > threshold) {
-          hasSoundFlag = true;
-          break;
-        }
-      }
-      callback(hasSoundFlag);
-    } catch (error) {
-      console.warn(`音频解码失败: ${error}`);
-      callback(false);
-    }
-  };
-  reader.onerror = (error) => {
-    console.error("文件读取失败:", error);
-  };
-  reader.readAsArrayBuffer(blob);
-};
+import getWaveBlob from "../utils/wavBlobUtil";
 
 export default class AudioRTC {
   stream!: MediaStream;
@@ -144,24 +105,22 @@ export class WatchMediaDevices {
    * 触发显示媒体选择
    * @param callback 调用返回，sound是否有声音
    */
-  async selectDisplayMedia(callback: (sound: boolean) => void) {
+  async selectDisplayMedia(callback: (blob: Blob) => void) {
     this.mediaStream = await this.getTypeMediaDevices();
     this.mediaRecorder = new MediaRecorder(this.mediaStream, {
       mimeType: "video/webm; codecs=pcm",
     });
     // 数据可用（录屏结束）时的回调
     this.mediaRecorder.ondataavailable = async (event) => {
-      // 转换webm -> wav
-      await hasSound(event.data, async (sound) => {
-        callback(sound);
-        if (sound && event.data.size > 0) {
-          const wavBlob = await getWaveBlob(event.data, false);
-          this.recordedChunks.push(wavBlob);
-        }
-      });
+      if (event.data.size > 0) {
+        // 转换webm -> wav
+        const wavBlob = await getWaveBlob(event.data, false);
+        // this.recordedChunks.push(wavBlob);
+        callback(wavBlob);
+      }
     };
     this.mediaRecorder.start();
-    // 设置定时器，每3秒发送一次数据
+    // 设置定时器，每600ms发送一次数据
     const sendToServer = async () => {
       try {
         if (this.mediaRecorder) {
@@ -172,7 +131,7 @@ export class WatchMediaDevices {
         this.stopWatch();
       }
     };
-    this.streamInterval = setInterval(sendToServer, 1200);
+    this.streamInterval = setInterval(sendToServer, 600);
   }
 
   /**

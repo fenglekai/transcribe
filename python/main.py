@@ -6,7 +6,7 @@ import io
 import librosa
 import zhconv
 
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, UploadFile, WebSocket
 from pydantic import BaseModel
 from whisper_model import WhisperModel
 from funasr_paraformer import FunasrParaformer
@@ -58,23 +58,38 @@ def audio_to_text(timestamp: str = Form(), audio: UploadFile = File()):
     }
 
 
-@app.post("/web/soundDevice")
-async def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
-    bt = audio.file.read()
-    memory_file = io.BytesIO(bt)
-    data, sample_rate = librosa.load(memory_file)
-    resample_data = librosa.resample(data, orig_sr=sample_rate, target_sr=16000)
+# @app.post("/web/soundDevice")
+# async def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
+#     bt = audio.file.read()
+#     memory_file = io.BytesIO(bt)
+#     data, sample_rate = librosa.load(memory_file)
+#     resample_data = librosa.resample(data, orig_sr=sample_rate, target_sr=16000)
 
-    transcribe_start_time = time.time()
-    # 语音识别
-    text = await funasr.queue_paraformer(resample_data)
-    transcribe_end_time = time.time()
+#     transcribe_start_time = time.time()
+#     # 语音识别
+#     text = await funasr.queue_paraformer(resample_data)
+#     transcribe_end_time = time.time()
 
-    return {
-        "status": "ok",
-        "text": text,
-        "transcribe_time": transcribe_end_time - transcribe_start_time,
-    }
+#     return {
+#         "status": "ok",
+#         "text": text,
+#         "transcribe_time": transcribe_end_time - transcribe_start_time,
+#     }
+@app.websocket("/web/soundDevice")
+async def sound_device(websocket: WebSocket):
+    await websocket.accept()  # 接收 WebSocket 连接
+    try:
+        while True:
+            bt = await websocket.receive_bytes()  # 接收音频流数据
+            memory_file = io.BytesIO(bt)
+            data, sample_rate = librosa.load(memory_file)
+            resample_data = librosa.resample(data, orig_sr=sample_rate, target_sr=16000)
+            # 语音识别
+            await funasr.ws_paraformer(resample_data,websocket)
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        await websocket.close()  # 关闭 WebSocket 连接
 
 
 @app.post("/python/soundDevice")

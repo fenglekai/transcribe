@@ -2,18 +2,18 @@ import { useState } from "react";
 import "./App.css";
 import RecordButton, { Result } from "./components/RecordButton";
 import UploadButton from "./components/UploadButton";
-import WatchButton from "./components/WatchButton";
-import { Divider, List, Typography, Collapse } from "antd";
+import RealTimeWatch from "./components/RealTimeWatch";
+import { Divider, List, Typography, Collapse, Tabs } from "antd";
+import type { TabsProps } from 'antd';
 
-function App() {
+function AudioRTC() {
   const [list, setList] = useState<Result[]>([]);
-
   const onResult = (result: Result) => {
     setList((prev) => [...prev, result]);
   };
 
   return (
-    <div className="App">
+    <>
       <RecordButton onResult={onResult} />
       <Divider orientation="left">上传文件</Divider>
       <UploadButton onResult={onResult} />
@@ -46,9 +46,7 @@ function App() {
                         renderItem={(segment) => (
                           <List.Item>
                             <List.Item.Meta
-                              title={
-                                <span>{segment.seek}</span>
-                              }
+                              title={<span>{segment.seek}</span>}
                               description={segment.text}
                             />
                             <span>开始时间：{segment.start.toFixed(2)}</span>
@@ -64,8 +62,31 @@ function App() {
           </List.Item>
         )}
       />
-      <Divider orientation="left">实时监听</Divider>
-      <WatchButton />
+    </>
+  );
+}
+
+function App() {
+
+  const items: TabsProps['items'] = [
+    {
+      key: '1',
+      label: '实时识别',
+      children: <RealTimeWatch />,
+    },
+    {
+      key: '2',
+      label: '录音识别',
+      children: <AudioRTC />,
+    },
+
+  ];
+
+  return (
+    <div className="App">
+      <Tabs defaultActiveKey="1" items={items} animated />
+      
+      
     </div>
   );
 }

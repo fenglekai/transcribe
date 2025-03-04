@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect } from "react";
-import { Input, Select } from "antd";
+import { Card, Col, Row, Select } from "antd";
 import { mediaDevicesType, WatchMediaDevices } from "../hook/AudioRTC";
 import { useWorker } from "../hook/useWorker";
 
-const { TextArea } = Input;
-
-let watchFrame: number;
+export interface DataItem {
+  key: string;
+  text: string;
+}
 
 export default function WatchAudio(props: {
   type: mediaDevicesType;
@@ -13,28 +14,46 @@ export default function WatchAudio(props: {
   errorCallback?: () => void;
 }) {
   const [watchMediaDevices] = useState(new WatchMediaDevices(props.type));
-  const [textRender, setTextRender] = useState("");
-  const [translationRender, setTranslationRender] = useState("");
+  const [textRender, setTextRender] = useState<DataItem[]>([]);
+  const [translationRender, setTranslationRender] = useState<DataItem[]>([]);
   const [translationType, setTranslationType] = useState("zh2en");
-  const webWorker = useWorker((event) => {
-    const message = event.data;
-    if (message.status) {
-      setTextRender(message.text);
-      setTranslationRender(message.translation);
-    } else {
-      console.error(`WebWorker异常: ${message.error}`);
-      handleStop();
-      if (props.errorCallback) {
-        props.errorCallback();
-      }
-    }
-  });
 
   const handleStop = useCallback(() => {
+    webWorker.postMessage({ clean: true });
     watchMediaDevices.stopWatch();
-    cancelAnimationFrame(watchFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const setTranscribe = useCallback(
+    (event: {
+      data: {
+        status: boolean;
+        text: string;
+        translation: string;
+        error: unknown;
+      };
+    }) => {
+      const message = event.data;
+      if (message.status) {
+        setTextRender((preText) =>
+          preText.concat({ key: preText.length.toString(), text: message.text })
+        );
+        // setTranslationRender((preTranslation) =>
+        //   preTranslation.concat({
+        //     key: preTranslation.length.toString(),
+        //     text: message.translation,
+        //   })
+        // );
+      } else {
+        console.error(`WebWorker异常: ${message.error}`);
+        handleStop();
+        props.errorCallback && props.errorCallback();
+      }
+    },
+    [handleStop, props]
+  );
+
+  const webWorker = useWorker(setTranscribe);
 
   const handleTranslationChange = (value: string) => {
     setTranslationType(value);
@@ -42,36 +61,23 @@ export default function WatchAudio(props: {
 
   const handleSelect = async () => {
     try {
-      await watchMediaDevices.selectDisplayMedia((sound) => {
-        if (!sound) {
-          webWorker.postMessage({ addRow: true });
-        }
+      await watchMediaDevices.selectDisplayMedia((blob) => {
+        webWorker.postMessage({ wavBlob: blob, translationType });
       });
     } catch (error) {
       console.warn(error);
-      if (props.errorCallback) {
-        props.errorCallback();
-      }
+      props.errorCallback && props.errorCallback();
     }
   };
-
-  const watchLoop = () => {
-    if (watchMediaDevices.getChunksLength() > 0) {
-      const wavBlob = watchMediaDevices.getRecordedChunks();
-      webWorker.postMessage({
-        wavBlob,
-        translationType,
-      });
-    }
-    watchFrame = requestAnimationFrame(watchLoop);
-  };
-  watchFrame = requestAnimationFrame(watchLoop);
 
   useEffect(() => {
     if (props.watch) {
-      setTextRender("");
-      setTranslationRender("");
+      textRender.length = 0;
+      translationRender.length = 0;
+      setTextRender(textRender);
+      setTranslationRender(translationRender);
       webWorker.postMessage({ clean: true });
+      webWorker.postMessage({ start: true });
       handleSelect();
     } else {
       handleStop();
@@ -80,30 +86,41 @@ export default function WatchAudio(props: {
   }, [handleStop, props.watch, webWorker]);
 
   return (
-    <>
-      <TextArea
-        value={textRender}
-        placeholder={props.type === "display" ? "标签页音频" : "麦克风"}
-        autoSize={{ minRows: 12, maxRows: 15 }}
-      />
-      <div style={{ marginTop: "20px" }}>
+    <Row gutter={12}>
+      <Col span={24}>
         <Select
           disabled={props.watch}
           defaultValue="zh2en"
-          style={{ width: 120 }}
+          style={{ width: 120, marginBottom: 20 }}
           onChange={handleTranslationChange}
           options={[
             { value: "zh2en", label: "中文 -> 英文" },
             { value: "en2zh", label: "英文 -> 中文" },
           ]}
         />
-        <TextArea
-          style={{ marginTop: "12px" }}
-          value={translationRender}
-          placeholder="实时翻译"
-          autoSize={{ minRows: 12, maxRows: 15 }}
-        />
-      </div>
-    </>
+      </Col>
+
+      <Col span={12}>
+        <Card style={{ height: 260, overflow: "auto" }}>
+          <p style={{ margin: 0 }}>
+            {textRender.map((item) => {
+              if (!item.text) {
+                return '\n'
+              }
+              return <span key={item.key}>{item.text}</span>
+            })}
+          </p>
+        </Card>
+      </Col>
+      <Col span={12}>
+        <Card style={{ height: 260, overflow: "auto" }}>
+          <p style={{ margin: 0 }}>
+            {translationRender.map((item) => (
+              <span key={item.key}>{item.text}</span>
+            ))}
+          </p>
+        </Card>
+      </Col>
+    </Row>
   );
 }
