@@ -88,8 +88,6 @@ async def sound_device(websocket: WebSocket):
             await funasr.ws_paraformer(resample_data,websocket)
     except Exception as e:
         print(f"Error: {e}")
-    finally:
-        await websocket.close()  # 关闭 WebSocket 连接
 
 
 @app.post("/python/soundDevice")

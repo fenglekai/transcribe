@@ -60,7 +60,7 @@ class FunasrParaformer:
             is_final = i == total_chunk_num - 1
             res = self.model.generate(
                 input=speech_chunk,
-                cache=self.cache,
+                # cache=self.cache,
                 is_final=is_final,
                 chunk_size=self.chunk_size,
                 encoder_chunk_look_back=self.encoder_chunk_look_back,

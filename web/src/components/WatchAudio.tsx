@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Card, Col, Row, Select } from "antd";
 import { mediaDevicesType, WatchMediaDevices } from "../hook/AudioRTC";
 import { useWorker } from "../hook/useWorker";
 
 export interface DataItem {
-  key: string;
+  key: number;
   text: string;
 }
 
@@ -15,14 +15,16 @@ export default function WatchAudio(props: {
 }) {
   const [watchMediaDevices] = useState(new WatchMediaDevices(props.type));
   const [textRender, setTextRender] = useState<DataItem[]>([]);
+  const [message, setMessage] = useState<DataItem[]>([]);
   const [translationRender, setTranslationRender] = useState<DataItem[]>([]);
   const [translationType, setTranslationType] = useState("zh2en");
 
-  const handleStop = useCallback(() => {
+  const textCardRef = useRef<HTMLDivElement>(null);
+
+  const handleStop = () => {
     webWorker.postMessage({ clean: true });
     watchMediaDevices.stopWatch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  };
 
   const setTranscribe = useCallback(
     (event: {
@@ -33,11 +35,42 @@ export default function WatchAudio(props: {
         error: unknown;
       };
     }) => {
-      const message = event.data;
-      if (message.status) {
-        setTextRender((preText) =>
-          preText.concat({ key: preText.length.toString(), text: message.text })
-        );
+      const data = event.data;
+      if (data.status) {
+        setMessage((msg) => {
+          // 处理data为空的情况
+          if (!data.text || /\s/.test(data.text)) {
+            let combineText = "";
+            msg.forEach((item) => {
+              combineText += item.text;
+            });
+            setTextRender((preText) => {
+              if (
+                preText.length > 0 &&
+                !preText[preText.length - 1].text &&
+                !combineText
+              )
+                return preText;
+              preText.push({
+                key: preText.length,
+                text: combineText,
+              });
+              return preText;
+            });
+            msg.length = 0;
+            return msg;
+          }
+          return msg.concat({
+            key: msg.length,
+            text: data.text,
+          });
+        });
+        if (textCardRef.current) {
+          textCardRef.current.scrollTo({
+            top: textCardRef.current.scrollHeight,
+            behavior: "auto",
+          });
+        }
         // setTranslationRender((preTranslation) =>
         //   preTranslation.concat({
         //     key: preTranslation.length.toString(),
@@ -45,12 +78,12 @@ export default function WatchAudio(props: {
         //   })
         // );
       } else {
-        console.error(`WebWorker异常: ${message.error}`);
+        console.error(`WebWorker异常: ${data.error}`);
         handleStop();
         props.errorCallback && props.errorCallback();
       }
     },
-    [handleStop, props]
+    [props]
   );
 
   const webWorker = useWorker(setTranscribe);
@@ -82,8 +115,7 @@ export default function WatchAudio(props: {
     } else {
       handleStop();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handleStop, props.watch, webWorker]);
+  }, [props.watch, webWorker]);
 
   return (
     <Row gutter={12}>
@@ -101,13 +133,13 @@ export default function WatchAudio(props: {
       </Col>
 
       <Col span={12}>
-        <Card style={{ height: 260, overflow: "auto" }}>
+        <Card ref={textCardRef} style={{ height: 260, overflow: "auto" }}>
+          {textRender.map((item) => {
+            return <p style={{ margin: 0 }}>{item.text}</p>;
+          })}
           <p style={{ margin: 0 }}>
-            {textRender.map((item) => {
-              if (!item.text) {
-                return '\n'
-              }
-              return <span key={item.key}>{item.text}</span>
+            {message.map((item) => {
+              return <span key={item.key}>{item.text}</span>;
             })}
           </p>
         </Card>

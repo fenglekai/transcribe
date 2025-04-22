@@ -4,6 +4,7 @@ import WebSocketService from "../utils/websocket";
 let loopStatus = false;
 let translationType = "zh2en";
 let wavBlob = null;
+const blobList = []
 
 self.addEventListener("message", async (event) => {
   const { clean, start, wavBlob: wb } = event.data;
@@ -11,6 +12,7 @@ self.addEventListener("message", async (event) => {
   if (clean) return cleanMark();
   if (wb) {
     wavBlob = wb;
+    blobList.push(wb)
   }
 });
 
