@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Col, Row, Typography } from "antd";
+import { Button, Typography } from "antd";
 import WatchAudio from "./WatchAudio";
 const { Title } = Typography;
 export default function WatchButton() {
@@ -34,7 +34,7 @@ export default function WatchButton() {
         ></WatchAudio>
       </div>
       <Title level={5} style={{ marginTop: 0, marginBottom: 12 }}>
-        标签页音频
+        标签页
       </Title>
       <Button
         color="primary"
