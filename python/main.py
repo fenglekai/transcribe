@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 import numpy as np
 import uvicorn
@@ -58,25 +59,8 @@ def audio_to_text(timestamp: str = Form(), audio: UploadFile = File()):
     }
 
 
-# @app.post("/web/soundDevice")
-# async def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
-#     bt = audio.file.read()
-#     memory_file = io.BytesIO(bt)
-#     data, sample_rate = librosa.load(memory_file)
-#     resample_data = librosa.resample(data, orig_sr=sample_rate, target_sr=16000)
-
-#     transcribe_start_time = time.time()
-#     # 语音识别
-#     text = await funasr.queue_paraformer(resample_data)
-#     transcribe_end_time = time.time()
-
-#     return {
-#         "status": "ok",
-#         "text": text,
-#         "transcribe_time": transcribe_end_time - transcribe_start_time,
-#     }
 @app.websocket("/web/soundDevice")
-async def sound_device(websocket: WebSocket):
+async def web_sound_device(websocket: WebSocket):
     await websocket.accept()  # 接收 WebSocket 连接
     try:
         while True:
@@ -85,13 +69,40 @@ async def sound_device(websocket: WebSocket):
             data, sample_rate = librosa.load(memory_file)
             resample_data = librosa.resample(data, orig_sr=sample_rate, target_sr=16000)
             # 语音识别
-            await funasr.ws_paraformer(resample_data,websocket)
+            await funasr.ws_paraformer(resample_data, websocket)
     except Exception as e:
         print(f"Error: {e}")
 
 
+@app.websocket("/web/translation")
+async def web_translation(websocket: WebSocket):
+    await websocket.accept()  # 接收 WebSocket 连接
+    try:
+        while True:
+            text = await websocket.receive_text()
+            data = json.loads(text)
+            # 验证数据格式
+            if "type" not in data or "text" not in data:
+                raise ValueError("Invalid data format: Missing 'type' or 'text' key")
+            type = data["type"]
+            text = data["text"]
+            translation = data["text"]
+            if text != "":
+                if type == "zh2en":
+                    translation = await zh2en.queue_translation(text)
+                if type == "en2zh":
+                    translation = await en2zh.queue_translation(text)
+                await websocket.send_text(json.dumps({"translation": translation}))
+    except json.JSONDecodeError:
+        print("Error: Invalid JSON format")
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+
+
 @app.post("/python/soundDevice")
-async def sound_device(timestamp: str = Form(), audio: UploadFile = File()):
+async def python_sound_device(timestamp: str = Form(), audio: UploadFile = File()):
     bt = audio.file.read()
     resample_data = np.frombuffer(bt, dtype=np.float32)
 
@@ -117,7 +128,7 @@ class TranslationBody(BaseModel):
 
 
 @app.post("/translation")
-async def sound_device(item: TranslationBody):
+async def translation(item: TranslationBody):
     type = item.type
     text = item.text
     if type == None or text == None:
