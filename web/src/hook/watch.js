@@ -66,9 +66,9 @@ const loop = async () => {
   requestAnimationFrame(loop);
 };
 
-// 语音识别
 const wsService = WebSocketService.getInstance();
 
+// 语音识别
 const transcribe = async (wavBlob) => {
   const res = await fetchSpeedToText(wavBlob);
   const { text } = res.data;

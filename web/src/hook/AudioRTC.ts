@@ -129,7 +129,7 @@ export class WatchMediaDevices {
         console.error(error)
       }
     };
-    // 设置定时器，每600ms发送一次数据
+    // 设置定时器，每1000ms发送一次数据
     const sendToServer = async () => {
       try {
         if (this.mediaRecorder) {
@@ -140,7 +140,7 @@ export class WatchMediaDevices {
         this.stopWatch();
       }
     };
-    this.streamInterval = setInterval(sendToServer, 600);
+    this.streamInterval = setInterval(sendToServer, 1000);
     // this.mediaRecorder.start(600);
   }
 

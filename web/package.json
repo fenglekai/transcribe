@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "antd": "^5.24.2",
     "axios": "^1.6.7",
     "rc-virtual-list": "^3.16.0",

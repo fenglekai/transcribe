@@ -12,6 +12,13 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
+    headers: {
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
+    },
   },
   plugins: [react()],
+  optimizeDeps: {
+    exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"],
+  },
 });
